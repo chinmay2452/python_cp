@@ -1,7 +1,8 @@
 import streamlit as st
 import requests
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import plotly.express as px
 import numpy as np
 
 # Function to fetch stock data
@@ -60,14 +61,11 @@ def get_high_momentum_stocks(api_key):
 # Function to plot stock data
 def plot_stock_data(df, stock_symbol):
     st.subheader(f"📊 Stock Price Chart for {stock_symbol}")
-    plt.figure(figsize=(10, 5))
-    plt.plot(df.index, df["Close"], label="Close Price", color='blue', linewidth=2)
-    plt.xlabel("Date")
-    plt.ylabel("Closing Price (USD)")
-    plt.title(f"Closing Price Trend of {stock_symbol}", fontsize=14, fontweight='bold')
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.6)
-    st.pyplot(plt)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df.index, y=df["Close"], mode='lines', name='Close Price', line=dict(color='blue')))
+    fig.update_layout(title=f"Closing Price Trend of {stock_symbol}", xaxis_title="Date", yaxis_title="Price (USD)",
+                          template="plotly_white")
+    st.plotly_chart(fig, use_container_width=True)
 
 
 # Function to plot additional graphs
@@ -75,37 +73,50 @@ def plot_additional_graphs(df, stock_symbol):
     st.subheader(f"📈 Additional Graphs for {stock_symbol}")
 
     # Volume Traded
-    plt.figure(figsize=(10, 5))
-    plt.bar(df.index, df["Volume"], color='green', alpha=0.6)
-    plt.xlabel("Date")
-    plt.ylabel("Volume")
-    plt.title(f"Volume Traded for {stock_symbol}", fontsize=14, fontweight='bold')
-    plt.grid(True, linestyle='--', alpha=0.6)
-    st.pyplot(plt)
+    fig = px.bar(df, x=df.index, y="Volume",
+                 title=f"Volume Traded for {stock_symbol}")
+
+    fig.update_layout(xaxis_title="Date",
+                      yaxis_title="Volume",
+                      template="plotly_white")
+
+    st.plotly_chart(fig, use_container_width=True)
 
     # Moving Averages
-    plt.figure(figsize=(10, 5))
     df['MA_50'] = df['Close'].rolling(window=50).mean()
     df['MA_200'] = df['Close'].rolling(window=200).mean()
-    plt.plot(df.index, df["Close"], label="Close Price", color='blue', linewidth=2)
-    plt.plot(df.index, df["MA_50"], label="50-Day MA", color='orange', linewidth=2)
-    plt.plot(df.index, df["MA_200"], label="200-Day MA", color='red', linewidth=2)
-    plt.xlabel("Date")
-    plt.ylabel("Price (USD)")
-    plt.title(f"Moving Averages for {stock_symbol}", fontsize=14, fontweight='bold')
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.6)
-    st.pyplot(plt)
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df.index,
+                             y=df['Close'],
+                             mode='lines',
+                             name='Close Price',
+                             line=dict(color='blue')))
+    fig.add_trace(go.Scatter(x=df.index,
+                             y=df['MA_50'],
+                             mode='lines',
+                             name='50-Day MA',
+                             line=dict(color='orange')))
+    fig.add_trace(go.Scatter(x=df.index,
+                             y=df['MA_200'],
+                             mode='lines',
+                             name='200-Day MA',
+                             line=dict(color='red')))
+    fig.update_layout(title=f"Moving Averages for {stock_symbol}",
+                      xaxis_title="Date",
+                      yaxis_title="Price (USD)",
+                      template="plotly_white")
+    st.plotly_chart(fig, use_container_width=True)
 
     # Opening Prices
-    plt.figure(figsize=(10, 5))
-    plt.plot(df.index, df["Open"], label="Open Price", color='purple', linewidth=2)
-    plt.xlabel("Date")
-    plt.ylabel("Opening Price (USD)")
-    plt.title(f"Opening Price Trend of {stock_symbol}", fontsize=14, fontweight='bold')
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.6)
-    st.pyplot(plt)
+    fig = px.line(df, x=df.index,
+                  y="Open",
+                  title=f"Opening Price Trend of {stock_symbol}",
+                  labels={'Open': 'Opening Price (USD)'})
+    fig.update_layout(xaxis_title="Date",
+                      yaxis_title="Opening Price (USD)",
+                      template="plotly_white")
+    st.plotly_chart(fig, use_container_width=True)
 
 
 # Function for SIP Calculator
@@ -160,6 +171,9 @@ def main():
     """, unsafe_allow_html=True)
 
     st.title("📈 ACCESS YOUR STOCK DATA HERE")
+
+    currency = st.selectbox("Select Currency", ["USD", "INR", "EUR"])
+    currency_symbol = {"USD": "$", "INR": "₹", "EUR": "€"}[currency]
 
     name = st.text_input("Enter Your Name:", "")
     stock_symbol = st.text_input("Enter Stock Symbol (e.g., AAPL, TSLA, MSFT):", "AAPL")
